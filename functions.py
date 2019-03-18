@@ -79,9 +79,9 @@ def expvalue(a,vec):
     exp=np.conj(vec)@a@vec
     return exp
 
-def en(asc,ordin,t,a): # scalable tight binding 2D energy
-    return -2*t*(np.cos(asc*a)+np.cos(ordin*a)-2)/a**2
+def en(asc,ordin,t,a,mu): # scalable tight binding 2D energy
+    return -2*t*(np.cos(asc*a)+np.cos(ordin*a)-2)-mu
 
-def enbog(k,a,mu,t,delta):
-    return np.sqrt(((t*k**2)-mu)**2+(delta*k)**2)
+def enbog(kx,ky,t,a,mu,delta):
+    return np.sqrt((en(kx,ky,t,a,mu))**2+(delta)**2*(kx*a)**2+(ky*a)**2)
 

@@ -14,9 +14,10 @@ from scipy import sparse as sprs
 #trial of Code1 functions for 1D systems
 
 #parameters inizialization
-L=10
-sizeham=20 #need a matrix element for every lattice point
-a=L/sizeham
+L=10 #matrix edge
+Ltilde=50 #need a matrix element for every lattice point
+sizeham=Ltilde
+a=L/Ltilde
 m=1
 t=1./(2*m)
 mu=-2*t
@@ -27,7 +28,7 @@ delta=3
 #parameters
 
 #hamiltonian definition
-ham1d=a**-2*fx.sparseham1d(sizeham,t,mu)
+ham1d=a**-1*fx.sparseham1d(sizeham,t,mu)
 px=fx.sparsemom1d(sizeham)
     
 vals,vecs=sprs.linalg.eigsh(a*ham1d,k=sizeham-2,which='SM')
@@ -48,12 +49,12 @@ k=np.zeros(len(vals))
 
 #ka=np.sqrt(np.arcsin(k/2)**2)
 for j in range(len(vals)):
-    k[j]=-1j*np.log(vecs[1,j]/vecs[0,j])/a
+    k[j]=-1j*np.log(vecs[1,j]/vecs[0,j])/L
 
 plt.figure(1)
 plt.plot(k,vals,'bo')
-asc=np.linspace(-np.pi/a,np.pi/a,100)
-plt.plot(asc,-(np.cos(asc*a)-1)/(a*m))
+asc=np.linspace(-np.pi/L,np.pi/L,100)
+plt.plot(asc,-2*t*(np.cos(asc*L)-1))
 
 #
 #for a in [8,4,2,1,0.5]:
