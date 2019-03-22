@@ -15,7 +15,7 @@ from scipy import sparse as sprs
 
 #parameters inizialization
 L=10 #matrix edge
-Ltilde=50 #need a matrix element for every lattice point
+Ltilde=10 #need a matrix element for every lattice point
 sizeham=Ltilde
 a=L/Ltilde
 m=1

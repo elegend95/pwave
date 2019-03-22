@@ -53,35 +53,24 @@ def sprsham(L,t,mu,phase): #DANGER mu sign mst be opposite of t
     return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
 
 def noncons(L,delta):
-    row=np.array([],dtype=np.int16)
-    col=np.array([],dtype=np.int16)
-    data=np.array([])
+    matr=matrixdata()
     for i in range(L**2):
-        row=np.append(row,i)
-        col=np.append(col,i)
-        data=np.append(data,0)
+        matr.appendx(i,i,0)
         nearn=nearneigh2D(i,L)
-        row=np.append(row,i)
-        col=np.append(col,nearn[0])
-        data=np.append(data,delta)
-        row=np.append(row,i)
-        col=np.append(col,nearn[1])
-        data=np.append(data,-1j*delta)
-        row=np.append(row,i)
-        col=np.append(col,nearn[2])
-        data=np.append(data,-delta)
-        row=np.append(row,i)
-        col=np.append(col,nearn[3])
-        data=np.append(data,1j*delta)
-    return sprs.coo_matrix((data,(row,col)))
+        coupl=np.array([delta,-1j*delta,-delta,1j*delta])
+        for j in range(len(nearn)):    
+            matr.appendx(i,nearn[j],coupl[j])
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
         
 def expvalue(a,vec):
     exp=np.conj(vec)@a@vec
     return exp
 
 def en(asc,ordin,t,a,mu): # scalable tight binding 2D energy
-    return -2*t*(np.cos(asc*a)+np.cos(ordin*a)-2)-mu
+    return -2*t*a**-2*(np.cos(asc*a)+np.cos(ordin*a)-2)-mu
 
 def enbog(kx,ky,t,a,mu,delta):
-    return np.sqrt((en(kx,ky,t,a,mu))**2+(delta)**2*(kx*a)**2+(ky*a)**2)
+    return np.sqrt((en(kx,ky,t,a,mu))**2+(delta/a)**2*((np.sin(kx*a))**2+(np.sin(ky*a))**2))
 
+def enbogcont(kx,ky,t,mu,delta):
+    return np.sqrt((t*(kx**2+ky**2)-mu)**2+(delta)**2*(kx**2+ky**2))

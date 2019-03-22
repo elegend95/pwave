@@ -65,3 +65,22 @@ def sprspy(L):
 def en(asc,ordin,t):
     return -2*t*(np.cos(asc*a)+np.cos(ordin*a)-2)/a**2
 
+
+##heat map figure of 2D spectrum
+fig=plt.figure()
+ax=fig.add_subplot(111)
+ax.set_xlabel('kx')
+ax.set_ylabel('ky')
+asc=np.linspace(-np.pi/L,np.pi/L,100)
+asc,ordin=np.meshgrid(asc,asc)
+ax.contourf(asc,ordin,fx.en(asc,ordin,t,L,0),200)
+axp=ax.scatter(kx[:],ky[:],c=vals[:],edgecolors='black')
+cb = plt.colorbar(axp)
+
+#spectrum of 2D free ham shape
+ax.plot_surface(asc, ordin, fx.en(asc,ordin,t,a,mu0), alpha=0.5) #energy with finite spacing
+ax.plot_surface(asc,ordin, t*((asc)**2+(ordin)**2)-mu0, alpha=0.2) #free energy
+
+
+
+
