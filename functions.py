@@ -6,19 +6,10 @@ Created on Wed Mar  6 14:36:48 2019
 """
 from scipy import sparse as sprs
 import numpy as np
+import classes as cl
 
-class matrixdata: #to build a sparse matrix I need to give 3 array of info (row, column and data)
-    def __init__(self): #arrays initialization
-        self.row=np.array([],dtype=np.int16) 
-        self.col=np.array([],dtype=np.int16)
-        self.data=np.array([])
-    
-    def appendx(self,x,y,dat):
-        self.row=np.append(self.row,x)
-        self.col=np.append(self.col,y)
-        self.data=np.append(self.data,dat)
-
-def nearneigh2D(i,L): #inputs: i=number of the site, L=lattice size
+#nearest neighbors with periodic boundary conditons
+def nearneighPBC(i,L): #inputs: i=number of the site, L=lattice size
     nearn=np.zeros(4) 
     nearn[0]=int((i+1)%L+L*np.floor(i/L)) #right element
     nearn[1]=int((i+L)%(L**2)) #bottom
@@ -26,37 +17,76 @@ def nearneigh2D(i,L): #inputs: i=number of the site, L=lattice size
     nearn[3]=int((i-L)%(L**2)) #top
     return np.int16(nearn)
 
-def sparseham1d(sizeham,t,mu):
-    matr=matrixdata()
-    for i in range(sizeham):
-        matr.appendx(i,i,-mu) #set chem pot on diagonal
-        matr.appendx(i,(i+1)%sizeham,-t*np.exp(10.**-4*1.j)) #set hopping left
-        matr.appendx(i,(i-1)%sizeham,-t*np.exp(10.**-4*-1.j)) #set hopping right
-    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
+#nearest neighbors with open boundary conditions
+#this function requires double the time of PBC
+def nearneighOBC(i,L): #inputs: i=number of the site, L=lattice size
+    nearn=np.array([])
+    if ((i+1)%L==0):
+        nearn=np.append(nearn,-1) #right element
+    else:
+        nearn=np.append(nearn,i+1)
+    if ((i+L)>=(L**2)):
+        nearn=np.append(nearn,-1) #right element
+    else:
+        nearn=np.append(nearn,i+L)
+    if ((i-1)%L==(L-1)):
+        nearn=np.append(nearn,-1) #right element
+    else:
+        nearn=np.append(nearn,i-1)
+    if ((i-L)<0):
+        nearn=np.append(nearn,-1) #right element
+    else:
+        nearn=np.append(nearn,i-L)
 
-def sparsemom1d(sizeham):
-    matr=matrixdata()
-    for i in range(sizeham):
-        matr.appendx(i,i,0)
-        matr.appendx(i,(i+1)%sizeham,1j)
-        matr.appendx(i,(i-1)%sizeham,-1j)
-    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
+    return np.int16(nearn)
     
-def sprsham(L,t,mu,phase): #DANGER mu sign mst be opposite of t
-    matr=matrixdata()
+def sprshamOBC(L,t,mu,phase):
+    matr=cl.matrixdata()
     for i in range(L**2):
         matr.appendx(i,i,-mu)
-        nearn=nearneigh2D(i,L)
-        #phase=np.array([(10.**-5)*1j,(10.**-4)*-1j,(10.**-5)*-1j,(10.**-4)*1j,])
+        nearn=nearneighOBC(i,L)
+        for j in range(len(nearn)):
+            if (nearn[j]==-1):
+                continue
+            matr.appendx(i,int(nearn[j]),-t*np.exp(phase[j]))    
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))    
+
+def sprshamPBC(L,t,mu,phase): #DANGER mu sign mst be opposite of t
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        matr.appendx(i,i,-mu)
+        nearn=nearneighPBC(i,L)
         for j in range(len(nearn)):
             matr.appendx(i,nearn[j],-t*np.exp(phase[j]))    
     return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
 
-def noncons(L,delta):
-    matr=matrixdata()
+def sprspy(L): #py operator matrix (already multiplied by -i)
+    matr=cl.matrixdata()
     for i in range(L**2):
         matr.appendx(i,i,0)
-        nearn=nearneigh2D(i,L)
+        nearn=nearneighOBC(i,L)
+        if (nearn[3]!=-1):    
+            matr.appendx(i,nearn[3],-1j)
+        if (nearn[1]!=-1):    
+            matr.appendx(i,nearn[1],1j)
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
+
+def sprspx(L): #px operator matrix (already multiplied by -i)
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        matr.appendx(i,i,0)
+        nearn=nearneighOBC(i,L)
+        if (nearn[0]!=-1):
+            matr.appendx(i,nearn[0],-1j) 
+        if (nearn[2]!=-1):            
+            matr.appendx(i,nearn[2],1j)
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
+
+def noncons(L,delta):
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        matr.appendx(i,i,0)
+        nearn=nearneighPBC(i,L)
         coupl=np.array([delta,-1j*delta,-delta,1j*delta])
         for j in range(len(nearn)):    
             matr.appendx(i,nearn[j],coupl[j])
