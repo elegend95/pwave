@@ -43,23 +43,15 @@ ky=np.zeros(len(vals))
 for j in range(len(vals)):
     ky[j]=fx.expvalue(py,vecs[:,j])
 
-#construction of momentum operator in 2D with sparse matrices
+#construction of momentum operator in 2D with sparse matrices (already multiplied by -i)
 def sprspy(L):
-    row=np.array([],dtype=np.int16)
-    col=np.array([],dtype=np.int16)
-    data=np.array([])
+    matr=cl.matrixdata()
     for i in range(L**2):
-        row=np.append(row,i)
-        col=np.append(col,i)
-        data=np.append(data,0)
-        nearn=nearneigh2D(i,L)
-        row=np.append(row,i)
-        col=np.append(col,nearn[3])
-        data=np.append(data,-1j)
-        row=np.append(row,i)
-        col=np.append(col,nearn[1])
-        data=np.append(data,1j)
-    return sprs.coo_matrix((data,(row,col)))
+        matr.appendx(i,i,0)
+        nearn=nearneighOBC(i,L)
+        matr.appendx(i,nearn[3],-1j)
+        matr.attendx(i,nearn[1],1j)
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
 
 #tight binding 2D scalable energy
 def en(asc,ordin,t):
