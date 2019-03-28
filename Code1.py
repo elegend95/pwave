@@ -15,28 +15,33 @@ from scipy import sparse as sprs
 from scipy import linalg as alg
 
 L=1 #lattice edge 
-Ltilde=3 #number of edge ites
-sizeham=Ltilde**2 #a matrix element for every lattice point, total matrix  2L^2 x 2L^2
+Ltilde=51 #number of edge sites a matrix element for every lattice point, total matrix  2L^2 x 2L^2
 a=L/Ltilde #lattice spacing
-t=1./2 #hoppin2
-mu0=0 #chemical potential
-mu=-4.*t+a**2*mu0 #discretized renormalized impulse
-delta=0 #coupling
-phase=np.array([(10.**-5)*1j,(10.**-4)*-1j,(10.**-5)*-1j,(10.**-4)*1j,]) #phase to break degeneracy
-
-#kinetic and pairing hamiltonian building (matrices with O(L^4) elements, only O(L^2) filled)
-kinet=fx.sprshamPBC(Ltilde,t,mu,phase) 
-pair=fx.noncons(Ltilde,a*delta/2) #n.b this is the pairing ham in the DESTRUCTION sector (lower left), pairing is modified by discretization
-    
-#hamiltonian creation (refer to notes for the esplicit form) by stacking blocks
+t=4./2 #hopping
+mu0=10 #chemical potential
+delta=1 #coupling
+ph=np.array([(10.**-5)*1j,(10.**-4)*-1j,(10.**-5)*-1j,(10.**-4)*1j,]) #phase to break degeneracy
+vortex=[25,25]
+'''
+kinetic and pairing hamiltonian building (matrices with O(L^4) elements, only O(L^2) filled), note that
+pairing is created in distruction sector (lower left). Parts are the stacked to create full hamiltonian
+'''
+kinet=fx.sprshamOBC(Ltilde,t,-4.*t+a**2*mu0,ph) 
+pair=fx.nonconsOBC(Ltilde,a*delta/2)
 ham=a**-2*sprs.hstack((sprs.vstack((kinet,pair)),sprs.vstack((-(pair.conjugate()),-(kinet.T)  ))))
+
+'''
+diagonalization using either sparse or full matrix diagonalization. 
+Full faster for small marices and with it full spectrum obtainable
+'''
+
 tic=time.time()
-#vals,vecs=sprs.linalg.eigsh(ham,k=2*sizeham-2,which='SM') #hamiltonian diagonalization (SM means sorting eigenvalues by smallest modulus)
+#vals,vecs=sprs.linalg.eigsh(ham,k=2*(Ltilde**2)-2,which='SM') #hamiltonian diagonalization (SM means sorting eigenvalues by smallest modulus)
 vals,vecs=alg.eigh(ham.toarray())
 toc=time.time()
 print(toc-tic) #prints how long the diagonalization process takes
 
-
+'''
 kx=np.zeros(len(vals))
 ky=np.zeros(len(vals))
 for r in range(len(vals)):
@@ -47,23 +52,6 @@ for r in range(len(vals)):
     if (np.abs(vecs[Ltilde,r])<10**-8)&(np.abs(vecs[0,r])<10**-8):
         ky[r]=-1j*np.log((vecs[Ltilde+Ltilde**2,r])/(vecs[Ltilde**2,r]))/a
 '''
-#construction of momentum operator, gives problem bc we have to do arcsin at the end and there is doubling problem
-pxss=a**-2*fx.sprspx(Ltilde) #construction of upper block of x direction momentum
-px=0.5*sprs.block_diag((pxss,-pxss.T)) #x momentum operator in particle-hole space
-pyss=a**-2* fx.sprspy(Ltilde)
-py=0.5*sprs.block_diag((pyss,-pyss.T))
-
-#evaluation of momentum over different eigenvectors
-qx=np.zeros(len(vals))
-for j in range(len(vals)):
-    qx[j]=fx.expvalue(pxss,vecs[:,j])
-
-qy=np.zeros(len(vals))
-for j in range(len(vals)):
-    qy[j]=fx.expvalue(pyss,vecs[:,j])
-
-kx=np.arcsin(qx*a)/a
-ky=np.arcsin(qy*a)/a
 '''
 #3D surface figure, setting parameters
 asc=np.linspace(-np.pi/a,np.pi/a,100)
@@ -95,7 +83,7 @@ kpos=np.array([])
 for i in range(len(vals)):
     if (vals[i]>=0):
         kpos=np.append(kpos,i)
-        
+'''       
         
 '''
 fig=plt.figure()
@@ -114,3 +102,20 @@ ax.contourf(asc,ordin,fx.enbog(asc,ordin,t,a,mu0,delta),200,norm=norm)
 axp=ax.scatter(kx[mezzival:],ky[mezzival:],c=vals[mezzival:],norm=norm,edgecolors='black')
 cb = plt.colorbar(axp)
 '''
+
+fig=plt.figure(2)
+ax=fig.add_subplot(111, projection='3d')
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_title('a='+str(a)+', t='+str(t)+', mu='+str(mu0)+', delta='+str(delta))
+asc=np.linspace(0,Ltilde-1,Ltilde,dtype=np.int)
+asc,ordin=np.meshgrid(asc,asc)
+#ax.set_zlim(-1,1)
+ax.scatter(asc,ordin,fx.densityplot(asc,ordin,vecs,Ltilde),'bo')
+
+cane=sum(sum(fx.densityplot(asc,ordin,vecs,Ltilde)))
+print(cane)
+print(fx.number(vecs,Ltilde))
+print(Ltilde**2)
+
+
