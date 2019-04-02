@@ -40,10 +40,10 @@ def nearneighOBC(i,L): #inputs: i=number of the site, L=lattice size
 
     return np.int16(nearn)
     
-def sprshamOBC(L,t,mu,phase):
+def sprshamOBC(L,t,mu,phase,r):
     matr=cl.matrixdata()
     for i in range(L**2):
-        matr.appendx(i,i,-mu)
+        matr.appendx(i,i,-mu+confinementwell(L,r,i))
         nearn=nearneighOBC(i,L)
         for j in range(len(nearn)):
             if (nearn[j]==-1):
@@ -120,7 +120,7 @@ def number(vecs,Ltilde):
 
 def density(asc,ordin,vecs,Ltilde):
     i=cordtoind(asc,ordin,Ltilde)
-    return sum(np.conj(vecs[i,Ltilde**2:])*vecs[i,Ltilde**2:])
+    return sum(np.conj(vecs[i+Ltilde**2,Ltilde**2:])*vecs[i+Ltilde**2,Ltilde**2:])
 
 def densityplot(asc,ordin,vecs,Ltilde):
     n=np.zeros((Ltilde,Ltilde))
@@ -150,4 +150,17 @@ def indtocord(i,Ltilde):
 
 def cordtoind(asc,ordin,Ltilde):
     return ordin*Ltilde+asc
+
+def confinementwell(Ltilde,r,i):
+    center=0.5*(Ltilde-1)
+    asc,ordin=indtocord(i,Ltilde)
+    if (np.sqrt((asc-center)**2+(ordin-center)**2)>r):
+        return 10**6
+    else:
+        return 0
+
+def confinementharm(Ltilde,omega,i):
+    center=0.5*(Ltilde-1)
+    asc,ordin=indtocord(i,Ltilde)
+    return 0.5*omega**2*((asc-center)**2+(ordin-center)**2)
 
