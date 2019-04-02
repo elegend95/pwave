@@ -15,18 +15,18 @@ from scipy import sparse as sprs
 from scipy import linalg as alg
 
 L=1 #lattice edge 
-Ltilde=51 #number of edge sites a matrix element for every lattice point, total matrix  2L^2 x 2L^2
+Ltilde=31 #number of edge sites a matrix element for every lattice point, total matrix  2L^2 x 2L^2
 a=L/Ltilde #lattice spacing
-t=4./2 #hopping
-mu0=10 #chemical potential
-delta=1 #coupling
+t=1./2 #hopping
+mu=100 #chemical potential
+delta=20 #coupling
 ph=np.array([(10.**-5)*1j,(10.**-4)*-1j,(10.**-5)*-1j,(10.**-4)*1j,]) #phase to break degeneracy
-vortex=[25,25]
+vortex=[15,16]
 '''
 kinetic and pairing hamiltonian building (matrices with O(L^4) elements, only O(L^2) filled), note that
-pairing is created in distruction sector (lower left). Parts are the stacked to create full hamiltonian
+pai10ing is created in distruction sector (lower left). Parts are the stacked to create full hamiltonian
 '''
-kinet=fx.sprshamOBC(Ltilde,t,-4.*t+a**2*mu0,ph) 
+kinet=fx.sprshamOBC(Ltilde,t,-4.*t+a**2*mu,ph,15) 
 pair=fx.nonconsOBC(Ltilde,a*delta/2)
 ham=a**-2*sprs.hstack((sprs.vstack((kinet,pair)),sprs.vstack((-(pair.conjugate()),-(kinet.T)  ))))
 
@@ -103,19 +103,23 @@ axp=ax.scatter(kx[mezzival:],ky[mezzival:],c=vals[mezzival:],norm=norm,edgecolor
 cb = plt.colorbar(axp)
 '''
 
+#plot of 3D density profile
+asc=np.linspace(0,Ltilde-1,Ltilde,dtype=np.int)
+asc,ordin=np.meshgrid(asc,asc) #mesh of lattice grid
+num=sum(sum(fx.densityplot(asc,ordin,vecs,Ltilde))) #total number of particles
 fig=plt.figure(2)
 ax=fig.add_subplot(111, projection='3d')
 ax.set_xlabel('x')
 ax.set_ylabel('y')
-ax.set_title('a='+str(a)+', t='+str(t)+', mu='+str(mu0)+', delta='+str(delta))
-asc=np.linspace(0,Ltilde-1,Ltilde,dtype=np.int)
-asc,ordin=np.meshgrid(asc,asc)
-#ax.set_zlim(-1,1)
-ax.scatter(asc,ordin,fx.densityplot(asc,ordin,vecs,Ltilde),'bo')
+ax.set_title('Ltilde='+str(Ltilde)+', t='+str(t)+', mu='+str(mu)+', delta='+str(delta)+', num='+str(num))
+ax.scatter(asc,ordin,fx.densityplot(asc,ordin,vecs,Ltilde),'bo') #plot of superfluid density
 
-cane=sum(sum(fx.densityplot(asc,ordin,vecs,Ltilde)))
-print(cane)
-print(fx.number(vecs,Ltilde))
-print(Ltilde**2)
+print(num)
+print((L**2/4*np.pi)*(mu/t))
+
+
+plt.figure(3)
+plt.ylim(-1000,1000)
+plt.plot(np.linspace(0,len(vals),len(vals)),vals,'bo')
 
 
