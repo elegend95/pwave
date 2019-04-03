@@ -12,6 +12,12 @@ import functions as fx
 from scipy import sparse as sprs
 from scipy.sparse import linalg
 
+def number(vecs,Ltilde):
+    num=0
+    for i in range(Ltilde**2):
+        num+=np.conj(vecs[Ltilde**2:,i])@vecs[Ltilde**2:,i]
+    return num
+
 
 #inefficient hamiltonian building
 #building of hamiltonian with given parameters
@@ -72,6 +78,41 @@ cb = plt.colorbar(axp)
 #spectrum of 2D free ham shape
 ax.plot_surface(asc, ordin, fx.en(asc,ordin,t,a,mu0), alpha=0.5) #energy with finite spacing
 ax.plot_surface(asc,ordin, t*((asc)**2+(ordin)**2)-mu0, alpha=0.2) #free energy
+
+#sparse impulse operators for OBC matrix (not useful)
+def sprspy(L): #py operator matrix (already multiplied by -i)
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        matr.appendx(i,i,0)
+        nearn=nearneighOBC(i,L)
+        if (nearn[3]!=-1):    
+            matr.appendx(i,nearn[3],-1j)
+        if (nearn[1]!=-1):    
+            matr.appendx(i,nearn[1],1j)
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
+
+def sprspx(L): #px operator matrix (already multiplied by -i)
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        matr.appendx(i,i,0)
+        nearn=nearneighOBC(i,L)
+        if (nearn[0]!=-1):
+            matr.appendx(i,nearn[0],-1j) 
+        if (nearn[2]!=-1):            
+            matr.appendx(i,nearn[2],1j)
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
+
+def densityfork(i,vecs,Ltilde): #density operator when we swich in momentum base (for bogoliubov ham)
+    asc,ordin=indtocord(i,Ltilde)
+    n=0
+    for i in range(Ltilde**2):
+        vi=vecs[Ltilde**2:,i]
+        for k in range(Ltilde**2):
+            vk=vecs[Ltilde**2:,k]
+            n+=np.exp(1j*(kx[i]-kx[k])*asc+1j*(ky[i]-ky[k])*ordin)*(np.conj(vi)@vk)
+    return n
+
+
 
 
 

@@ -39,18 +39,10 @@ def nearneighOBC(i,L): #inputs: i=number of the site, L=lattice size
         nearn=np.append(nearn,i-L)
 
     return np.int16(nearn)
-    
-def sprshamOBC(L,t,mu,phase,r):
-    matr=cl.matrixdata()
-    for i in range(L**2):
-        matr.appendx(i,i,-mu+confinementwell(L,r,i))
-        nearn=nearneighOBC(i,L)
-        for j in range(len(nearn)):
-            if (nearn[j]==-1):
-                continue
-            matr.appendx(i,int(nearn[j]),-t*np.exp(phase[j]))    
-    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))    
 
+'''
+functions defined for periodic boundary conditions
+'''
 def sprshamPBC(L,t,mu,phase): #DANGER mu sign mst be opposite of t
     matr=cl.matrixdata()
     for i in range(L**2):
@@ -69,7 +61,35 @@ def nonconsPBC(L,delta):
         for j in range(len(nearn)):    
             matr.appendx(i,nearn[j],coupl[j])
     return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
-        
+   
+def nonconsPBCvortex(L,delta,vortex):
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        matr.appendx(i,i,0)
+        nearn=nearneighPBC(i,L)
+        kcoup=np.array([delta,-1j*delta,-delta,1j*delta])
+        for j in range(len(nearn)):
+            coup=np.sqrt(phaser(i,vortex,L)*phaser(nearn[j],vortex,L))
+            matr.appendx(i,nearn[j],kcoup[j]*coup)
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))    
+
+'''
+functions defined for open boundary conditions
+'''
+
+def sprshamOBC(L,t,mu,phase,r):
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        matr.appendx(i,i,-mu)
+        nearn=nearneighOBC(i,L)
+        for j in range(len(nearn)):
+            if (nearn[j]==-1):
+                continue
+            matr.appendx(i,int(nearn[j]),-t*np.exp(phase[j]))    
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))    
+
+#+confinementwell(L,r,i)        
+
 def nonconsOBC(L,delta):
     matr=cl.matrixdata()
     for i in range(L**2):
@@ -81,23 +101,6 @@ def nonconsOBC(L,delta):
                 continue
             matr.appendx(i,nearn[j],coupl[j])
     return sprs.coo_matrix((matr.data,(matr.row,matr.col)))  
-
-def phaser(i,vortex,Ltilde):
-    asc,ordin=indtocord(i,Ltilde)
-    if (asc==vortex[0])&(ordin==vortex[1]):
-        return 0
-    return ((ordin-vortex[0])+1j*(vortex[1]-asc))/(np.sqrt((asc-vortex[0])**2+(ordin-vortex[1])**2))
-
-def nonconsPBCvortex(L,delta,vortex):
-    matr=cl.matrixdata()
-    for i in range(L**2):
-        matr.appendx(i,i,0)
-        nearn=nearneighPBC(i,L)
-        kcoup=np.array([delta,-1j*delta,-delta,1j*delta])
-        for j in range(len(nearn)):
-            coup=np.sqrt(phaser(i,vortex,L)*phaser(nearn[j],vortex,L))
-            matr.appendx(i,nearn[j],kcoup[j]*coup)
-    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
 
 def nonconsOBCvortex(L,delta,vortex):
     matr=cl.matrixdata()
@@ -112,11 +115,40 @@ def nonconsOBCvortex(L,delta,vortex):
             matr.appendx(i,nearn[j],kcoup[j]*coup)
     return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
 
+'''
+confining potentials
+'''
+
+def confinementwell(Ltilde,r,i): #insert a hard wall circular potential
+    center=0.5*(Ltilde-1)
+    asc,ordin=indtocord(i,Ltilde)
+    if (np.sqrt((asc-center)**2+(ordin-center)**2)>r):
+        return 10**4
+    else:
+        return 0
+
+def confinementharm(Ltilde,omega,i):
+    center=0.5*(Ltilde-1)
+    asc,ordin=indtocord(i,Ltilde)
+    return 0.5*omega**2*((asc-center)**2+(ordin-center)**2)
+
+
 def number(vecs,Ltilde):
     num=0
     for i in range(Ltilde**2):
         num+=np.conj(vecs[Ltilde**2:,i])@vecs[Ltilde**2:,i]
     return num
+
+def phaser(i,vortex,Ltilde):
+    asc,ordin=indtocord(i,Ltilde)
+    if (asc==vortex[0])&(ordin==vortex[1]):
+        return 0
+    return ((ordin-vortex[0])+1j*(vortex[1]-asc))/(np.sqrt((asc-vortex[0])**2+(ordin-vortex[1])**2))
+
+def phasetemp(asc,ordin,vortex,Ltilde):
+    if (asc==vortex[0])&(ordin==vortex[1]):
+        return 0
+    return ((ordin-vortex[0])+1j*(vortex[1]-asc))/(np.sqrt((asc-vortex[0])**2+(ordin-vortex[1])**2))
 
 def density(asc,ordin,vecs,Ltilde):
     i=cordtoind(asc,ordin,Ltilde)
@@ -128,6 +160,13 @@ def densityplot(asc,ordin,vecs,Ltilde):
         for j in range(Ltilde):
             n[i][j]=density(asc[i][j],ordin[i][j],vecs,Ltilde)
     return n
+
+def phaseplot(asc,ordin,vortex,Ltilde):
+    n=np.zeros((Ltilde,Ltilde),dtype=np.complex)
+    for i in range(Ltilde):
+        for j in range(Ltilde):
+            n[i][j]=phasetemp(asc[i][j],ordin[i][j],vortex,Ltilde)
+    return n    
 
 def expvalue(a,vec): #expectation value of operators
     exp=np.conj(vec)@a@vec
@@ -151,16 +190,4 @@ def indtocord(i,Ltilde):
 def cordtoind(asc,ordin,Ltilde):
     return ordin*Ltilde+asc
 
-def confinementwell(Ltilde,r,i):
-    center=0.5*(Ltilde-1)
-    asc,ordin=indtocord(i,Ltilde)
-    if (np.sqrt((asc-center)**2+(ordin-center)**2)>r):
-        return 10**6
-    else:
-        return 0
-
-def confinementharm(Ltilde,omega,i):
-    center=0.5*(Ltilde-1)
-    asc,ordin=indtocord(i,Ltilde)
-    return 0.5*omega**2*((asc-center)**2+(ordin-center)**2)
 
