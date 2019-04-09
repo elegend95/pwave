@@ -8,7 +8,7 @@ Created on Thu Mar  7 13:43:36 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.linalg as alg
-import functions as fx
+import functions1d as fx
 from scipy import sparse as sprs
 
 #trial of Code1 functions for 1D systems

@@ -9,6 +9,7 @@ from scipy import sparse as sprs
 import numpy as np
 import classes as cl
 
+
 '''
 nearest neighbors with periodic boundary conditons
 '''

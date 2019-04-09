@@ -15,6 +15,7 @@ import functions as fx
 from scipy import sparse as sprs
 from scipy import linalg as alg
 
+
 '''
 hamiltonian parameters
 '''

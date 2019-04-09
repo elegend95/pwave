@@ -6,6 +6,7 @@ Created on Thu Apr  4 10:23:32 2019
 this code contains all the useful routines to compute energy spectrum for PBC Bogoliubov Hamiltonian
 """
 
+
 import Code1
 
 #calculation of impulses of eigenvectors employing translational invariance of states
