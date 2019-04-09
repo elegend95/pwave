@@ -4,6 +4,7 @@ Created on Mon Mar 25 16:17:41 2019
 
 @author: Nicco
 """
+
 import numpy as np
 import functions as fx
 
