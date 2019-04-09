@@ -12,12 +12,20 @@ import functions as fx
 from scipy import sparse as sprs
 from scipy.sparse import linalg
 
+#number of particles in ground state
 def number(vecs,Ltilde):
     num=0
     for i in range(Ltilde**2):
         num+=np.conj(vecs[Ltilde**2:,i])@vecs[Ltilde**2:,i]
     return num
 
+#plot of the phase around vortex
+def phaseplot(asc,ordin,vortex,Ltilde): 
+    n=np.zeros((Ltilde,Ltilde),dtype=np.complex)
+    for i in range(Ltilde):
+        for j in range(Ltilde):
+            n[i][j]=phasetemp(asc[i][j],ordin[i][j],vortex,Ltilde)
+    return n    
 
 #inefficient hamiltonian building
 #building of hamiltonian with given parameters
