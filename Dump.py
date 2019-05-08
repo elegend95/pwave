@@ -121,6 +121,62 @@ def densityfork(i,vecs,Ltilde): #density operator when we swich in momentum base
             n+=np.exp(1j*(kx[i]-kx[k])*asc+1j*(ky[i]-ky[k])*ordin)*(np.conj(vi)@vk)
     return n
 
+'''
+sparse matrix functions USELESS
+'''
+
+def sprshamOBC(L,t,mu,phase,r):
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        matr.appendx(i,i,-mu+confinementwell(L,r,i)) #external potential on every site
+        nearn=nearneighOBC(i,L)
+        for j in range(len(nearn)):
+            if (nearn[j]==-1):
+                continue
+            matr.appendx(i,int(nearn[j]),-t*np.exp(phase[j]))    
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))    
+
+def nonconsOBC(L,delta):
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        nearn=nearneighOBC(i,L)
+        coupl=np.array([delta,-1j*delta,-delta,1j*delta])
+        for j in range(len(nearn)): 
+            if (nearn[j]==-1):
+                continue
+            matr.appendx(i,nearn[j],coupl[j])
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))  
+
+def sprshamPBC(L,t,mu,phase): #hopping hamiltonian
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        matr.appendx(i,i,-mu) #chemical potential (mu sign must be opposite of t)
+        nearn=nearneighPBC(i,L)
+        for j in range(len(nearn)):
+            matr.appendx(i,nearn[j],-t*np.exp(phase[j])) #hopping
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
+
+def nonconsPBC(L,delta): #superconducting pairing term
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        nearn=nearneighPBC(i,L)
+        coupl=np.array([delta,-1j*delta,-delta,1j*delta]) #px+ipy coupling discretized
+        for j in range(len(nearn)):    
+            matr.appendx(i,nearn[j],coupl[j])
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))
+   
+def nonconsPBCvortex(L,delta,vortex): #superconducting pairing with a vortex
+    matr=cl.matrixdata()
+    for i in range(L**2):
+        nearn=nearneighPBC(i,L)
+        kcoup=np.array([delta,-1j*delta,-delta,1j*delta])
+        for j in range(len(nearn)):
+            coup=np.sqrt(phaser(i,vortex,L)*phaser(nearn[j],vortex,L)) #vortex is a tuple with vortex coordinates
+            matr.appendx(i,nearn[j],kcoup[j]*coup)
+    return sprs.coo_matrix((matr.data,(matr.row,matr.col)))    
+
+
+
 
 
 
