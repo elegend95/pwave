@@ -7,13 +7,11 @@ Created on Wed Mar  4 11:03:43 2020
 
 from __future__ import division
 from scipy import special as sp
-from scipy import integrate as integ
 import numpy as np
 import matplotlib.pyplot as plt
 import Functions as fx
-from numba import njit,jit
 from scipy import linalg as alg
-import time
+from numba import jit
 
 #basis function parameters
 R=2 #radius of disk
@@ -21,9 +19,9 @@ N=5 #maximum number of bessel zeros (index n in hamiltonian)
 M=5 #maximum order of bessel function (index m in hamiltonian)
 
 #hamiltonian parameters
-T=1
-MU=8
-D=0.
+T=1 #hopping
+MU=8 #chemical potential
+D=0. #superconducting coupling
 
 ############################################################################################
 #definition of basis functions
@@ -65,16 +63,14 @@ for i in range(1,M):
         zerbes[N*(2*i)+j,2]=j
         
 zerbes=zerbes[np.lexsort((zerbes[:,1], zerbes[:,2]))] #sorting of indices in order to put all the elemts with equal n together
-eigvals=((T*(zerbes/R)**2)-MU) #computation of eigenvalues for each pair (m,n)
-kinet=np.diag(zerbes[:,0]) #diagonal kinetic energy matrix  
+eigvals=((T*(zerbes[:,0]/R)**2)-MU) #computation of eigenvalues for each pair (m,n)
+kinet=np.diag(eigvals) #diagonal kinetic energy matrix  
 
 vals,vecs=alg.eigh(kinet)    
 
 #recasting eigenfunctions in a position basis for plotting purposes
 Ltilde=35 #number of lattice points to plot
 posiz=np.zeros((Ltilde*Ltilde,(2*M-1)*N),dtype=np.complex128)
-
-
 
 basislatticematrix=np.zeros((Ltilde*Ltilde,(2*M-1)*N),dtype=np.complex128)
 for k in range((2*M-1)*N): #DO NOT RUN THESE LINES IF NOT NEEDED
@@ -87,7 +83,6 @@ posiz=posiz.T
 punti=np.linspace(0,(Ltilde**2)-1,(Ltilde**2),dtype=np.int64) #initialization of a square grid to be recast as radial
 y=(np.floor(punti/Ltilde)-(Ltilde-1)/2)/(Ltilde/(2*R))
 x=(punti%Ltilde-(Ltilde-1)/2)/(Ltilde/(2*R))
-
 
 dens=np.zeros(Ltilde**2) #density of superfluid 
 for i in range(Ltilde**2):
