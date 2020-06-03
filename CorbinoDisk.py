@@ -8,18 +8,19 @@ import numpy as np
 from scipy import linalg as alg
 from matplotlib import pyplot as plt
 from scipy import special as sp
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 #lattice parameters
-rmin=0.5 #inner radius
+rmin=0.01 #inner radius
 rmax=3.88 #outer radius
-L=10 #radius discretization
-N=10 #angle discretization
+L=20 #radius discretization
+N=50 #angle discretization
 drad=(rmax-rmin)/L
 
 #hamiltonian parameters
 T=1 #hopping term
-M=0. #chemical potential
-D=10.**-3 #coupling term
+M=8. #chemical potential
+D=3 #coupling term
 
 ############################################################################################
 #definition of functions
@@ -103,12 +104,27 @@ for i in range(L*N):
 fig=plt.figure(L,figsize=(10,10))
 fig.add_subplot(111,aspect='equal')
 
-plt.scatter(x,y,c=dens,marker='s') #scatter plot of density
+plt.scatter(x,y,c=dens,marker='o') #scatter plot of density
 
 plt.grid(True)
 plt.ylim(-rmax-0.5,rmax+0.5)
 plt.xlim(-rmax-0.5,rmax+0.5)
+plt.tight_layout()
 plt.colorbar()
+
+
+fig=plt.figure(4,figsize=(10,10)) #initialization of plot
+ax2=fig.add_subplot(111) #plot inside figure
+ax2.set_xlabel('x')
+ax2.set_ylabel('y')
+axp=ax2.scatter(x,y,c=dens) #contour plot of density
+
+divider = make_axes_locatable(ax2) #setup of the colorbar on the top (next three lines)
+cax = divider.append_axes('top',size="5%", pad=0.05)
+plt.colorbar(axp,orientation='horizontal', cax=cax,ticks=np.linspace(0,np.max(dens),5))
+cax.xaxis.set_ticks_position("top")
+plt.tight_layout()
+
 
 ############################################################################################
 #radial plot of laplacian eigenfunctions on the disk, to use only when diagonalizing just free hamiltonian
@@ -131,7 +147,7 @@ asc=np.linspace(rmin,rmax,L)
 plt.title('mu='+str(M)+', delta='+str(D)+', T='+str(T))
 plt.xlabel('Radius')
 plt.ylabel('Density')
-plt.scatter(asc,densrad,s=5)  #exact diagonalization density
+plt.scatter(asc,densrad,s=5, )  #exact diagonalization density
 #plt.scatter(asc,basisfunc(asc,0,rmax,0,1).conj()*basisfunc(asc,0,rmax,0,1)) #exact density from eigenfunctions
 
 plt.grid(True)

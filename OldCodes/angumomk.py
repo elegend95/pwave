@@ -8,6 +8,7 @@ from __future__ import division
 import numpy as np
 import functions as fx
 from numba import njit
+
 '''
 discrete fourier transform of vectors
 '''
